@@ -42,22 +42,21 @@ func main() {
 		0.5, 0.5, 0.0,
 	}
 
-	var vao uint32
-	gl.GenVertexArrays(1, &vao)
-	gl.BindVertexArray(vao)
-	defer gl.DeleteVertexArrays(1, &vao)
-	var vbo uint32
-	gl.GenBuffers(1, &vbo)
-	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
-	gl.BufferData(gl.ARRAY_BUFFER, len(vertices)*4, gl.Ptr(vertices), gl.STATIC_DRAW)
-	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 0, nil)
-	defer gl.DeleteBuffers(1, &vbo)
+	indices := []uint32{
+		0, 1, 2,
+		1, 2, 3,
+	}
+
+	model, err := CreateModelFromData(vertices, indices)
+	if err != nil {
+		panic(err)
+	}
+	defer model.Delete()
 
 	program, err := CreateProgramFromFiles("vertex.glsl", "fragment.glsl")
 	if err != nil {
 		panic(err)
 	}
-	// gl.BindAttribLocation(program, 0, gl.Str("vert"+"\x00"))
 	defer program.Delete()
 
 	for !window.ShouldClose() {
@@ -65,11 +64,7 @@ func main() {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		program.Use()
-		gl.BindVertexArray(vao)
-		gl.EnableVertexAttribArray(0)
-		gl.DrawArrays(gl.TRIANGLE_STRIP, 0, int32(len(vertices)))
-		gl.DisableVertexAttribArray(0)
-		gl.BindVertexArray(0)
+		model.Draw()
 		program.Unuse()
 
 		window.SwapBuffers()

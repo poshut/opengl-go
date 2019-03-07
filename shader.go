@@ -8,20 +8,25 @@ import (
 	"github.com/go-gl/gl/v4.1-core/gl"
 )
 
+// ShaderProgram represents a shader program containing a vertex and a fragment shader
 type ShaderProgram uint32
 
+// Delete deletes the OpenGL shader program
 func (program ShaderProgram) Delete() {
 	gl.DeleteProgram(uint32(program))
 }
 
+// Use makes the shader program the active one
 func (program ShaderProgram) Use() {
 	gl.UseProgram(uint32(program))
 }
 
+// Unuse makes no shader program the active one
 func (program ShaderProgram) Unuse() {
 	gl.UseProgram(0)
 }
 
+// CreateProgramFromFiles creates a shader program from the vertex and fragment shader paths
 func CreateProgramFromFiles(vertex string, fragment string) (ShaderProgram, error) {
 	vertexShader, err := readShaderFile(vertex)
 	if err != nil {
@@ -35,6 +40,7 @@ func CreateProgramFromFiles(vertex string, fragment string) (ShaderProgram, erro
 	return CreateProgramFromSource(vertexShader, fragmentShader)
 }
 
+// CreateProgramFromSource creates a shader program from shader sources
 func CreateProgramFromSource(vertex string, fragment string) (ShaderProgram, error) {
 	vertexShader, err := compileShader(vertex, gl.VERTEX_SHADER)
 	if err != nil {

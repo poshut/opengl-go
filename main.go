@@ -71,11 +71,18 @@ func main() {
 	}
 	defer program.Delete()
 
+	var red float32
+
 	for !window.ShouldClose() {
 		gl.ClearColor(1.0, 1.0, 1.0, 0.0)
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		program.Use()
+		program.LoadUniformFloat("red", red)
+		red += 0.01
+		if red > 1 {
+			red = 0.0
+		}
 		model.Draw()
 		program.Unuse()
 

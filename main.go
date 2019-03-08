@@ -47,7 +47,19 @@ func main() {
 		1, 2, 3,
 	}
 
-	model, err := CreateModelFromData(vertices, indices)
+	texCoords := []float32{
+		0.0, 0.0,
+		1.0, 0.0,
+		0.0, 1.0,
+		1.0, 1.0,
+	}
+
+	model, err := CreateModelFromData(vertices, indices, texCoords)
+	// model, err := CreateModelFromFile("bunny.obj")
+	if err != nil {
+		panic(err)
+	}
+	err = model.AddTexture("brick.jpeg", true)
 	if err != nil {
 		panic(err)
 	}

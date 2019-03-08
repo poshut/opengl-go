@@ -1,11 +1,7 @@
 package main
 
 import (
-	"fmt"
-	"image"
-	"image/draw"
 	_ "image/jpeg"
-	"os"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 )
@@ -16,7 +12,7 @@ type Model struct {
 	vbos     []uint32
 	indices  uint32
 	size     int32
-	textures []uint32
+	textures []Texture
 }
 
 // Delete deletes the model
@@ -42,7 +38,7 @@ func (m Model) Delete() {
 
 // CreateModelFromData creates a model from the provided vertex and index data
 func CreateModelFromData(vertices []float32, indices []uint32, textureCoords []float32) (Model, error) {
-	model := Model{vao: 0, vbos: []uint32{0, 0}, size: int32(len(indices)), indices: 0, textures: []uint32{}}
+	model := Model{vao: 0, vbos: []uint32{0, 0}, size: int32(len(indices)), indices: 0, textures: []Texture{}}
 	gl.GenVertexArrays(1, &model.vao)
 	gl.BindVertexArray(model.vao)
 
@@ -74,13 +70,11 @@ func (m Model) Draw() {
 	gl.EnableVertexAttribArray(0)
 	gl.EnableVertexAttribArray(1)
 	for i, t := range m.textures {
-		gl.ActiveTexture(gl.TEXTURE0 + uint32(i))
-		gl.BindTexture(gl.TEXTURE_2D, t)
+		t.Bind(i)
 	}
 	gl.DrawElements(gl.TRIANGLES, m.size, gl.UNSIGNED_INT, nil)
-	for i := 0; i < len(m.textures); i++ {
-		gl.ActiveTexture(gl.TEXTURE0 + uint32(i))
-		gl.BindTexture(gl.TEXTURE_2D, 0)
+	for i, t := range m.textures {
+		t.Unbind(i)
 	}
 	gl.DisableVertexAttribArray(1)
 	gl.DisableVertexAttribArray(0)
@@ -89,37 +83,10 @@ func (m Model) Draw() {
 
 // AddTexture adds a texture to a given model. Mipmaps will be created if mipmap is true
 func (m *Model) AddTexture(path string, mipmap bool) error {
-	file, err := os.Open(path)
+	texture, err := NewTextureFromFile(path, mipmap)
 	if err != nil {
 		return err
 	}
-	i, _, err := image.Decode(file)
-	if err != nil {
-		return err
-	}
-
-	rgba := image.NewRGBA(i.Bounds())
-	if rgba.Stride != rgba.Rect.Size().X*4 {
-		return fmt.Errorf("unsupported stride")
-	}
-	draw.Draw(rgba, rgba.Bounds(), i, image.Point{0, 0}, draw.Src)
-
-	var texture uint32
-	gl.GenTextures(1, &texture)
-	gl.ActiveTexture(gl.TEXTURE0 + uint32(len(m.textures)))
-	gl.BindTexture(gl.TEXTURE_2D, texture)
-	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGBA, int32(rgba.Bounds().Size().X), int32(rgba.Bounds().Size().Y), 0, gl.RGBA, gl.UNSIGNED_BYTE, gl.Ptr(rgba.Pix))
-	if mipmap {
-		gl.GenerateMipmap(gl.TEXTURE_2D)
-		gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR)
-	} else {
-		gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-	}
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-
-	gl.BindTexture(gl.TEXTURE_2D, 0)
-
 	m.textures = append(m.textures, texture)
-
 	return nil
 }

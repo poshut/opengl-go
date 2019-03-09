@@ -58,14 +58,15 @@ func main() {
 	}
 	defer program.Delete()
 
-	viewMatrix := mgl32.Perspective(mgl32.DegToRad(45.0), float32(windowWidth)/float32(windowHeight), 0.1, 1000.0)
+	projectionMatrix := mgl32.Perspective(mgl32.DegToRad(45.0), float32(windowWidth)/float32(windowHeight), 0.1, 1000.0)
 	program.Use()
-	program.LoadUniformMatrix("viewMatrix", viewMatrix)
+	program.LoadUniformMatrix("projectionMatrix", projectionMatrix)
 	program.Unuse()
 
+	camera := NewCamera(window)
 	gl.Enable(gl.DEPTH_TEST)
 
-	var red float32
+		camera.Update(window)
 
 	for !window.ShouldClose() {
 		gl.ClearColor(0.0, 0.0, 0.0, 0.0)

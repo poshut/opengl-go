@@ -10,10 +10,11 @@ import (
 	"github.com/go-gl/glfw/v3.2/glfw"
 )
 
-const windowWidth = 640
-const windowHeight = 480
+const windowWidth = 1080
+const windowHeight = 720
 
 func main() {
+	// Create a window and initialize OpenGL
 	runtime.LockOSThread()
 	err := glfw.Init()
 	if err != nil {
@@ -40,6 +41,7 @@ func main() {
 
 	gl.Enable(gl.DEBUG_OUTPUT)
 
+	// Load model and texture and create an entity
 	model, err := CreateModelFromFile("res/stall.obj")
 	if err != nil {
 		panic(err)
@@ -52,35 +54,37 @@ func main() {
 
 	entity := Entity{mgl32.Vec3{0.0, -5.0, -20.0}, mgl32.Vec3{0.0, 0.0, 0.0}, 1.0, &model}
 
+	// Load the shader
 	program, err := CreateProgramFromFiles("vertex.glsl", "fragment.glsl")
 	if err != nil {
 		panic(err)
 	}
 	defer program.Delete()
 
+	// Load the perspective matrix
 	projectionMatrix := mgl32.Perspective(mgl32.DegToRad(45.0), float32(windowWidth)/float32(windowHeight), 0.1, 1000.0)
 	program.Use()
 	program.LoadUniformMatrix("projectionMatrix", projectionMatrix)
 	program.Unuse()
 
+	// Create the camera
 	camera := NewCamera(window)
+
+	// Enable depth testing
 	gl.Enable(gl.DEPTH_TEST)
+
+	for !window.ShouldClose() {
 
 		camera.Update(window)
 
-	for !window.ShouldClose() {
 		gl.ClearColor(0.0, 0.0, 0.0, 0.0)
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-		red += 0.01
-		if red > 1 {
-			red = 0.0
-		}
 		entity.position = entity.position.Add(mgl32.Vec3{0.0, 0.0, -0.01})
 		entity.rotation = entity.rotation.Add(mgl32.Vec3{0.0, 0.01, 0.0})
 
 		program.Use()
-		program.LoadUniformFloat("red", red)
+		camera.Load(&program)
 		entity.Load(&program)
 		model.Draw()
 		program.Unuse()

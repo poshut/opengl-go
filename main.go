@@ -55,7 +55,7 @@ func main() {
 	entity := Entity{mgl32.Vec3{0.0, -5.0, -20.0}, mgl32.Vec3{0.0, 0.0, 0.0}, 1.0, &model}
 
 	// Load the shader
-	program, err := CreateProgramFromFiles("vertex.glsl", "fragment.glsl")
+	program, err := CreateProgramFromFiles("shaders/vertex.glsl", "shaders/fragment.glsl")
 	if err != nil {
 		panic(err)
 	}

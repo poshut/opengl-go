@@ -4,9 +4,14 @@ import (
 	"fmt"
 	"runtime"
 
+	"github.com/go-gl/mathgl/mgl32"
+
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
 )
+
+const windowWidth = 640
+const windowHeight = 480
 
 func main() {
 	runtime.LockOSThread()
@@ -21,7 +26,7 @@ func main() {
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
 	glfw.WindowHint(glfw.Resizable, glfw.False)
-	window, err := glfw.CreateWindow(640, 480, "random window", nil, nil)
+	window, err := glfw.CreateWindow(windowWidth, windowHeight, "random window", nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -65,11 +70,18 @@ func main() {
 	}
 	defer model.Delete()
 
+	entity := Entity{mgl32.Vec3{0.0, 0.0, 0.0}, mgl32.Vec3{0.0, 0.0, 0.0}, 1.0, &model}
+
 	program, err := CreateProgramFromFiles("vertex.glsl", "fragment.glsl")
 	if err != nil {
 		panic(err)
 	}
 	defer program.Delete()
+
+	viewMatrix := mgl32.Perspective(mgl32.DegToRad(45.0), float32(windowWidth)/float32(windowHeight), 0.1, 1000.0)
+	program.Use()
+	program.LoadUniformMatrix("viewMatrix", viewMatrix)
+	program.Unuse()
 
 	var red float32
 
@@ -77,12 +89,14 @@ func main() {
 		gl.ClearColor(1.0, 1.0, 1.0, 0.0)
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-		program.Use()
-		program.LoadUniformFloat("red", red)
 		red += 0.01
 		if red > 1 {
 			red = 0.0
 		}
+
+		program.Use()
+		program.LoadUniformFloat("red", red)
+		entity.Load(&program)
 		model.Draw()
 		program.Unuse()
 

@@ -40,37 +40,17 @@ func main() {
 
 	gl.Enable(gl.DEBUG_OUTPUT)
 
-	vertices := []float32{
-		-0.5, -0.5, 0.0,
-		0.5, -0.5, 0.0,
-		-0.5, 0.5, 0.0,
-		0.5, 0.5, 0.0,
-	}
-
-	indices := []uint32{
-		0, 1, 2,
-		1, 2, 3,
-	}
-
-	texCoords := []float32{
-		0.0, 0.0,
-		1.0, 0.0,
-		0.0, 1.0,
-		1.0, 1.0,
-	}
-
-	model, err := CreateModelFromData(vertices, indices, texCoords)
-	// model, err := CreateModelFromFile("bunny.obj")
+	model, err := CreateModelFromFile("res/stall.obj")
 	if err != nil {
 		panic(err)
 	}
-	err = model.AddTexture("brick.jpeg", true)
+	err = model.AddTexture("res/stallTexture.png", true)
 	if err != nil {
 		panic(err)
 	}
 	defer model.Delete()
 
-	entity := Entity{mgl32.Vec3{0.0, 0.0, 0.0}, mgl32.Vec3{0.0, 0.0, 0.0}, 1.0, &model}
+	entity := Entity{mgl32.Vec3{0.0, -5.0, -20.0}, mgl32.Vec3{0.0, 0.0, 0.0}, 1.0, &model}
 
 	program, err := CreateProgramFromFiles("vertex.glsl", "fragment.glsl")
 	if err != nil {
@@ -83,16 +63,20 @@ func main() {
 	program.LoadUniformMatrix("viewMatrix", viewMatrix)
 	program.Unuse()
 
+	gl.Enable(gl.DEPTH_TEST)
+
 	var red float32
 
 	for !window.ShouldClose() {
-		gl.ClearColor(1.0, 1.0, 1.0, 0.0)
+		gl.ClearColor(0.0, 0.0, 0.0, 0.0)
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		red += 0.01
 		if red > 1 {
 			red = 0.0
 		}
+		entity.position = entity.position.Add(mgl32.Vec3{0.0, 0.0, -0.01})
+		entity.rotation = entity.rotation.Add(mgl32.Vec3{0.0, 0.01, 0.0})
 
 		program.Use()
 		program.LoadUniformFloat("red", red)

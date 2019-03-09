@@ -1,7 +1,11 @@
 package main
 
 import (
+	"fmt"
 	_ "image/jpeg"
+	"io/ioutil"
+	"strconv"
+	"strings"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 )
@@ -22,19 +26,101 @@ func (m Model) Delete() {
 	gl.DeleteVertexArrays(1, &m.vao)
 }
 
-// func CreateModelFromFile(file string) (Model, error) {
-// 	f, err := os.Open(file)
-// 	if err != nil {
-// 		return Model{0, nil, 0}, err
-// 	}
-// 	object, err := obj.NewReader(f).Read()
-// 	if err != nil {
-// 		return Model{0, nil, 0}, err
-// 	}
+// CreateModelFromFile loads an .obj file into a model
+func CreateModelFromFile(file string) (Model, error) {
+	fileData, err := ioutil.ReadFile(file)
+	if err != nil {
+		return Model{0, nil, 0, 0, nil}, err
+	}
+	lines := strings.Split(string(fileData), "\n")
+	vertices := []float32{}
+	indices := []uint32{}
+	textureCoords := []float32{}
+	normals := []float32{}
 
-// 	// add VAO, VBO and index buffer
+	realTextureCoords := []float32{}
+	realNormals := []float32{}
 
-// }
+	for _, l := range lines {
+		l = strings.Trim(l, "\r")
+		if strings.HasPrefix(l, "v ") {
+			lineParts := strings.Split(l, " ")
+			if len(lineParts) != 4 {
+				return Model{0, nil, 0, 0, nil}, fmt.Errorf("Invalid line in %s: %s", file, l)
+			}
+			for _, n := range lineParts[1:] {
+				f, err := strconv.ParseFloat(n, 32)
+				if err != nil {
+					return Model{0, nil, 0, 0, nil}, err
+				}
+				vertices = append(vertices, float32(f))
+
+			}
+		} else if strings.HasPrefix(l, "vt ") {
+			lineParts := strings.Split(l, " ")
+			if len(lineParts) != 3 {
+				return Model{0, nil, 0, 0, nil}, fmt.Errorf("Invalid line in %s: %s", file, l)
+			}
+			for _, n := range lineParts[1:] {
+				f, err := strconv.ParseFloat(n, 32)
+				if err != nil {
+					return Model{0, nil, 0, 0, nil}, err
+				}
+				textureCoords = append(textureCoords, float32(f))
+			}
+		} else if strings.HasPrefix(l, "vn ") {
+			lineParts := strings.Split(l, " ")
+			if len(lineParts) != 4 {
+				return Model{0, nil, 0, 0, nil}, fmt.Errorf("Invalid line in %s: %s", file, l)
+			}
+			for _, n := range lineParts[1:] {
+				f, err := strconv.ParseFloat(n, 32)
+				if err != nil {
+					return Model{0, nil, 0, 0, nil}, err
+				}
+				normals = append(normals, float32(f))
+			}
+		} else if strings.HasPrefix(l, "f ") {
+			if len(realNormals) == 0 && len(realTextureCoords) == 0 {
+				realNormals = make([]float32, len(vertices))
+				realTextureCoords = make([]float32, 2*len(vertices)/3)
+			}
+			lineParts := strings.Split(l, " ")
+			if len(lineParts) != 4 {
+				return Model{0, nil, 0, 0, nil}, fmt.Errorf("Invalid line in %s: Does not have four components %s", file, l)
+			}
+
+			for _, p := range lineParts[1:] {
+				vertexData := strings.Split(p, "/")
+				if len(vertexData) != 3 {
+					return Model{0, nil, 0, 0, nil}, fmt.Errorf("Invalid line in %s: %s", file, l)
+				}
+				vertexIndex, err := strconv.ParseUint(vertexData[0], 10, 32)
+				if err != nil {
+					return Model{0, nil, 0, 0, nil}, fmt.Errorf("Invalid line in %s: %s", file, l)
+				}
+				vertexIndex--
+				texCoordIndex, err := strconv.ParseInt(vertexData[1], 10, 32)
+				if err != nil {
+					return Model{0, nil, 0, 0, nil}, fmt.Errorf("Invalid line in %s: %s", file, l)
+				}
+				texCoordIndex--
+				normalIndex, err := strconv.ParseInt(vertexData[2], 10, 32)
+				if err != nil {
+					return Model{0, nil, 0, 0, nil}, fmt.Errorf("Invalid line in %s: %s", file, l)
+				}
+				normalIndex--
+				indices = append(indices, uint32(vertexIndex))
+				realNormals[vertexIndex*3] = normals[normalIndex*3]
+				realNormals[vertexIndex*3+1] = normals[normalIndex*3+1]
+				realNormals[vertexIndex*3+2] = normals[normalIndex*3+2]
+				realTextureCoords[vertexIndex*2] = textureCoords[texCoordIndex*2]
+				realTextureCoords[vertexIndex*2+1] = 1 - textureCoords[texCoordIndex*2+1]
+			}
+		}
+	}
+	return CreateModelFromData(vertices, indices, realTextureCoords)
+}
 
 // CreateModelFromData creates a model from the provided vertex and index data
 func CreateModelFromData(vertices []float32, indices []uint32, textureCoords []float32) (Model, error) {

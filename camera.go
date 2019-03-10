@@ -56,4 +56,9 @@ func (c *Camera) Update(window *glfw.Window) {
 	} else if window.GetKey(glfw.KeyS) == glfw.Press {
 		c.position = c.position.Add(mgl32.Vec3{float32(-math.Sin(c.yaw) * moveSpeed), 0, float32(-math.Cos(c.yaw) * moveSpeed)})
 	}
+	if window.GetKey(glfw.KeySpace) == glfw.Press {
+		c.position = c.position.Add(mgl32.Vec3{0.0, moveSpeed, 0.0})
+	} else if window.GetKey(glfw.KeyLeftShift) == glfw.Press {
+		c.position = c.position.Add(mgl32.Vec3{0.0, -moveSpeed, 0.0})
+	}
 }

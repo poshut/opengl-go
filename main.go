@@ -62,7 +62,7 @@ func main() {
 	defer program.Delete()
 
 	// Load the perspective matrix
-	projectionMatrix := mgl32.Perspective(mgl32.DegToRad(45.0), float32(windowWidth)/float32(windowHeight), 0.1, 1000.0)
+	projectionMatrix := mgl32.Perspective(mgl32.DegToRad(fov), float32(windowWidth)/float32(windowHeight), nearPlane, farPlane)
 	program.Use()
 	program.LoadUniformMatrix("projectionMatrix", projectionMatrix)
 	program.Unuse()

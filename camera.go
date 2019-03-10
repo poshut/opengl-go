@@ -10,6 +10,9 @@ import (
 
 const cursorSpeed = 0.005
 const moveSpeed = 1.0
+const fov = 70.0
+const nearPlane = 0.1
+const farPlane = 1000.0
 
 // Camera represents the camera in the world
 type Camera struct {

@@ -42,7 +42,7 @@ func main() {
 	gl.Enable(gl.DEBUG_OUTPUT)
 
 	// Load model and texture and create an entity
-	model, err := CreateModelFromFile("res/stall.obj")
+	model, err := CreateModelFromFile("res/dragon.obj")
 	if err != nil {
 		panic(err)
 	}

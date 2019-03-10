@@ -8,11 +8,13 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 )
 
-const cursorSpeed = 0.005
-const moveSpeed = 1.0
-const fov = 70.0
-const nearPlane = 0.1
-const farPlane = 1000.0
+const (
+	cursorSpeed = 0.005
+	moveSpeed   = 1.0
+	fov         = 70.0
+	nearPlane   = 0.1
+	farPlane    = 1000.0
+)
 
 // Camera represents the camera in the world
 type Camera struct {

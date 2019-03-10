@@ -45,6 +45,7 @@ func (c *Camera) Update(window *glfw.Window) {
 	if c.lastCursorPosX != 0 || c.lastCursorPosY != 0 {
 		c.yaw += cursorSpeed * (c.lastCursorPosX - newX)
 		c.pitch += cursorSpeed * (c.lastCursorPosY - newY)
+		c.pitch = clampf64(c.pitch, -math.Pi/2+0.1, math.Pi/2-0.1)
 	}
 	c.lastCursorPosX = newX
 	c.lastCursorPosY = newY

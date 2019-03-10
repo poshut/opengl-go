@@ -46,10 +46,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	err = model.AddTexture("res/stallTexture.png", true)
-	if err != nil {
-		panic(err)
-	}
+	// err = model.AddTexture("res/stallTexture.png", true)
+	// if err != nil {
+	// 	panic(err)
+	// }
 	defer model.Delete()
 
 	entity := Entity{mgl32.Vec3{0.0, -5.0, -20.0}, mgl32.Vec3{0.0, 0.0, 0.0}, 1.0, &model}
@@ -80,13 +80,15 @@ func main() {
 		gl.ClearColor(0.0, 0.0, 0.0, 0.0)
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-		entity.position = entity.position.Add(mgl32.Vec3{0.0, 0.0, -0.01})
 		entity.rotation = entity.rotation.Add(mgl32.Vec3{0.0, 0.01, 0.0})
 
 		program.Use()
+		program.LoadUniformVector("lightPos", mgl32.Vec3{0.0, 0.0, 0.0})
 		camera.Load(&program)
+		model.Bind(&program)
 		entity.Load(&program)
 		model.Draw()
+		model.Unbind(&program)
 		program.Unuse()
 
 		window.SwapBuffers()

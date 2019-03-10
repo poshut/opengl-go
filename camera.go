@@ -28,7 +28,7 @@ type Camera struct {
 func NewCamera(window *glfw.Window) Camera {
 	window.SetInputMode(glfw.CursorMode, glfw.CursorDisabled)
 	lastX, lastY := window.GetCursorPos()
-	return Camera{mgl32.Vec3{0.0, 0.0, 0.0}, 0.0, 0.0, lastX, lastY}
+	return Camera{mgl32.Vec3{0.0, 0.0, 0.0}, -math.Pi, 0.0, lastX, lastY}
 }
 
 // Load Loads the viewMatrix into the provided shader program. THE PROGRAM MUST BE ACTIVE!

@@ -61,6 +61,12 @@ func main() {
 	}
 	defer program.Delete()
 
+	fboProgram, err := CreateProgramFromFiles("shaders/nop_vertex.glsl", "shaders/nop_fragment.glsl")
+	if err != nil {
+		panic(err)
+	}
+	defer program.Delete()
+
 	// Load the perspective matrix
 	projectionMatrix := mgl32.Perspective(mgl32.DegToRad(fov), float32(windowWidth)/float32(windowHeight), nearPlane, farPlane)
 	program.Use()
@@ -70,19 +76,38 @@ func main() {
 	// Create the camera
 	camera := NewCamera(window)
 
+	InitializeFramebuffers()
+	fbo, err := NewFramebuffer()
+	if err != nil {
+		panic(err)
+	}
+	err = fbo.AddColorAttachment()
+	if err != nil {
+		panic(err)
+	}
+	fbo.AddRenderbufferDepthAndStencil()
+	if !fbo.IsComplete() {
+		fmt.Println(gl.CheckFramebufferStatus(fbo.id))
+		panic("fbo not complete")
+	}
+	defer fbo.Delete()
+
 	// Enable depth testing
 	gl.Enable(gl.DEPTH_TEST)
 	glfw.SwapInterval(1)
 
 	for !window.ShouldClose() {
 
+		// Update status
 		camera.Update(window)
+		entity.rotation = entity.rotation.Add(mgl32.Vec3{0.0, 0.01, 0.0})
 
+		gl.Enable(gl.DEPTH_TEST)
 		gl.ClearColor(0.0, 0.0, 0.0, 0.0)
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-		entity.rotation = entity.rotation.Add(mgl32.Vec3{0.0, 0.01, 0.0})
-
+		// Render scene to framebuffer
+		fbo.Use()
 		program.Use()
 		program.LoadUniformVector("lightPos", mgl32.Vec3{0.0, 0.0, 0.0})
 		camera.Load(&program)
@@ -91,6 +116,13 @@ func main() {
 		model.Draw()
 		model.Unbind(&program)
 		program.Unuse()
+		fbo.Unuse()
+
+		// Render framebuffer to screen
+		fboProgram.Use()
+		gl.Disable(gl.DEPTH_TEST)
+		fbo.Draw(&fboProgram)
+		fboProgram.Unuse()
 
 		window.SwapBuffers()
 		glfw.PollEvents()

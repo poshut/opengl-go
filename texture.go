@@ -8,6 +8,7 @@ import (
 	_ "image/png"
 	"io"
 	"os"
+	"unsafe"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 )
@@ -27,8 +28,8 @@ func (t Texture) Unbind(unit int) {
 	gl.BindTexture(gl.TEXTURE_2D, 0)
 }
 
-// NewTextureFromData creates a texture from the provided io.Reader
-func NewTextureFromData(r io.Reader, mipmap bool) (Texture, error) {
+// NewTextureFromReader creates a texture from the provided io.Reader
+func NewTextureFromReader(r io.Reader, mipmap bool) (Texture, error) {
 	i, _, err := image.Decode(r)
 	if err != nil {
 		return 0, err
@@ -39,11 +40,16 @@ func NewTextureFromData(r io.Reader, mipmap bool) (Texture, error) {
 		return 0, fmt.Errorf("unsupported stride")
 	}
 	draw.Draw(rgba, rgba.Bounds(), i, image.Point{0, 0}, draw.Src)
+	return NewTextureFromData(int32(rgba.Bounds().Size().X), int32(rgba.Bounds().Size().Y), gl.Ptr(rgba.Pix), mipmap)
+}
+
+// NewTextureFromData creates a texture from the provided raw data
+func NewTextureFromData(width, height int32, data unsafe.Pointer, mipmap bool) (Texture, error) {
 
 	var texture uint32
 	gl.GenTextures(1, &texture)
 	gl.BindTexture(gl.TEXTURE_2D, texture)
-	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGBA, int32(rgba.Bounds().Size().X), int32(rgba.Bounds().Size().Y), 0, gl.RGBA, gl.UNSIGNED_BYTE, gl.Ptr(rgba.Pix))
+	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, data)
 	if mipmap {
 		gl.GenerateMipmap(gl.TEXTURE_2D)
 		gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR)
@@ -67,5 +73,5 @@ func NewTextureFromFile(path string, mipmap bool) (Texture, error) {
 		return 0, err
 	}
 	defer file.Close()
-	return NewTextureFromData(file, mipmap)
+	return NewTextureFromReader(file, mipmap)
 }

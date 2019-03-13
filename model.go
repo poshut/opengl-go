@@ -124,44 +124,53 @@ func CreateModelFromFile(file string) (Model, error) {
 
 // CreateModelFromData creates a model from the provided vertex and index data
 func CreateModelFromData(vertices []float32, indices []uint32, textureCoords []float32, normals []float32) (Model, error) {
-	model := Model{vao: 0, vbos: []uint32{0, 0, 0}, size: int32(len(indices)), indices: 0, textures: []Texture{}}
+	model := NewModel()
+	model.AddBufferAndAttribute3f(vertices, 3, false)
+	model.AddBufferAndAttribute3f(textureCoords, 2, false)
+	model.AddBufferAndAttribute3f(normals, 3, true)
+	model.SetIndexBuffer(indices)
+	return model, nil
+}
+
+// NewModel creates a model with a VAO without any buffers
+func NewModel() Model {
+	model := Model{vao: 0, vbos: []uint32{}, size: 0, indices: 0, textures: []Texture{}}
 	gl.GenVertexArrays(1, &model.vao)
-	gl.BindVertexArray(model.vao)
+	return model
+}
 
-	gl.GenBuffers(1, &model.vbos[0])
-	gl.BindBuffer(gl.ARRAY_BUFFER, model.vbos[0])
-	gl.BufferData(gl.ARRAY_BUFFER, len(vertices)*4, gl.Ptr(vertices), gl.STATIC_DRAW)
-	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 0, nil)
+// AddBufferAndAttribute3f adds a buffer containing the provided data and a corresponding vertex attribute
+func (m *Model) AddBufferAndAttribute3f(data []float32, numComponents int32, normalize bool) {
+	gl.BindVertexArray(m.vao)
+	var vbo uint32
+	gl.GenBuffers(1, &vbo)
+	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
+	gl.BufferData(gl.ARRAY_BUFFER, len(data)*4, gl.Ptr(data), gl.STATIC_DRAW)
+	gl.VertexAttribPointer(uint32(len(m.vbos)), numComponents, gl.FLOAT, normalize, 0, nil)
 	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
+	gl.BindVertexArray(0)
+	m.vbos = append(m.vbos, vbo)
+}
 
-	gl.GenBuffers(1, &model.indices)
-	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.indices)
+// SetIndexBuffer sets the index buffer of the model
+func (m *Model) SetIndexBuffer(indices []uint32) {
+	gl.BindVertexArray(m.vao)
+	gl.GenBuffers(1, &m.indices)
+	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, m.indices)
 	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(indices)*4, gl.Ptr(indices), gl.STATIC_DRAW)
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0)
-
-	gl.GenBuffers(1, &model.vbos[1])
-	gl.BindBuffer(gl.ARRAY_BUFFER, model.vbos[1])
-	gl.BufferData(gl.ARRAY_BUFFER, len(textureCoords)*4, gl.Ptr(textureCoords), gl.STATIC_DRAW)
-	gl.VertexAttribPointer(1, 2, gl.FLOAT, false, 0, nil)
-	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
-
-	gl.GenBuffers(1, &model.vbos[2])
-	gl.BindBuffer(gl.ARRAY_BUFFER, model.vbos[2])
-	gl.BufferData(gl.ARRAY_BUFFER, len(normals)*4, gl.Ptr(normals), gl.STATIC_DRAW)
-	gl.VertexAttribPointer(2, 3, gl.FLOAT, true, 0, nil)
-	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
-
 	gl.BindVertexArray(0)
-	return model, nil
+	m.size = int32(len(indices))
+
 }
 
 // Bind binds all VAOs, vertex attributes textures and model uniforms
 func (m *Model) Bind(shader *ShaderProgram) {
 	gl.BindVertexArray(m.vao)
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, m.indices)
-	gl.EnableVertexAttribArray(0)
-	gl.EnableVertexAttribArray(1)
-	gl.EnableVertexAttribArray(2)
+	for i := range m.vbos {
+		gl.EnableVertexAttribArray(uint32(i))
+	}
 	for i, t := range m.textures {
 		t.Bind(i)
 	}
@@ -182,12 +191,11 @@ func (m *Model) Unbind(shader *ShaderProgram) {
 	for i, t := range m.textures {
 		t.Unbind(i)
 	}
-	gl.DisableVertexAttribArray(2)
-	gl.DisableVertexAttribArray(1)
-	gl.DisableVertexAttribArray(0)
+	for i := range m.vbos {
+		gl.DisableVertexAttribArray(uint32(i))
+	}
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0)
 	gl.BindVertexArray(0)
-
 }
 
 // AddTexture adds a texture to a given model. Mipmaps will be created if mipmap is true

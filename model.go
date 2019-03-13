@@ -10,7 +10,7 @@ import (
 	"github.com/go-gl/gl/v4.1-core/gl"
 )
 
-// Model represents a model without texture information
+// Model represents a model without texture information that has an index buffer
 type Model struct {
 	vao      uint32
 	vbos     []uint32
@@ -20,7 +20,7 @@ type Model struct {
 }
 
 // Delete deletes the model
-func (m Model) Delete() {
+func (m *Model) Delete() {
 	gl.DeleteBuffers(int32(len(m.vbos)), &m.vbos[0])
 	gl.DeleteBuffers(1, &m.indices)
 	gl.DeleteVertexArrays(1, &m.vao)

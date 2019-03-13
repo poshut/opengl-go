@@ -72,6 +72,7 @@ func main() {
 
 	// Enable depth testing
 	gl.Enable(gl.DEPTH_TEST)
+	glfw.SwapInterval(1)
 
 	for !window.ShouldClose() {
 
